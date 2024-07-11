@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bathala Party Plotting</title>
+    <link rel="icon" href="https://styles.redditmedia.com/t5_3n0uef/styles/communityIcon_38eq9r6e8b961.png" type="image/png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            font-size: 16px;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-radius: 10px;
+            overflow: hidden; /* Prevents shadow clipping */
+        }
+        .title {
+            margin-bottom: 20px;
+            position: relative;
+            height: 300px; /* Set height */
+        }
+        .title img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Maintain aspect ratio and cover container */
+            object-position: center; /* Center image */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .dropdown-select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            max-width: 300px;
+            width: 100%;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .dropdown-select:focus {
+            outline: none;
+            border-color: #66afe9;
+        }
+        .team-info {
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f0f0f0;
+            text-align: center;
+            font-weight: bold;
+        }
+        td {
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">
+            <img src="https://hoanghamobile.com/tin-tuc/wp-content/uploads/2023/12/lost-ark-thumb.jpg" alt="Title Image">
+        </div>
+        <div class="controls">
+            <select class="dropdown-select" onchange="fetchSheetData(this.value)">
+                <option value="" selected disabled>Select Raid</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+        <div class="team-info" id="teamInfo">
+            <!-- Team info will be dynamically inserted here -->
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>IGN</th>
+                    <th>Class</th>
+                    <th>ILevel</th>
+                    <th>Role</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="partyPlotting">
+                <!-- Content will be dynamically inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const apiKey = 'AIzaSyBew36AsUsnR-jPNfMuCQCkMhSr8Lc7OlQ';
+        const sheetId = '1svhVPBwp0mD9VYIk69mxBnzWZmHW2g5d9V8_bL59GQc'; // Your Google Sheet ID
+        let sheets = []; // Array to store sheet names
+
+        function fetchSheetNames() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties.title&key=${apiKey}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    sheets = data.sheets.map(sheet => sheet.properties.title); // Extract sheet names
+                    populateDropdown(); // Populate dropdown with sheet names
+                })
+                .catch(error => console.error('Error fetching sheet names:', error));
+        }
+
+        function fetchSheetData(sheetName) {
+            const tableBody = document.getElementById('partyPlotting');
+            const teamInfo = document.getElementById('teamInfo');
+            tableBody.innerHTML = ''; // Clear existing table content
+            teamInfo.innerHTML = ''; // Clear existing team info content
+
+            if (!sheetName || sheetName === 'Select Raid') return; // Exit function if Select Raid option is selected or no sheet name
+
+            const range = `${sheetName}!A1:E`; // Adjust the range to include all rows and columns needed (A to E)
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const rows = data.values;
+
+                    // Create a function to handle cell merging
+                    function mergeCells(rowElement, startIndex, endIndex) {
+                        const mergedCell = document.createElement('th');
+                        mergedCell.textContent = rows[startIndex].join(' ');
+                        mergedCell.setAttribute('colspan', '5'); // span across all columns
+                        rowElement.appendChild(mergedCell);
+                    }
+
+                    rows.forEach((row, index) => {
+                        if (index === 0 || index === 10 || index === 20) {
+                            const rowElement = document.createElement('tr');
+                            mergeCells(rowElement, index, index + 9); // Merge cells for Row 1, Row 11, and Row 21
+                            tableBody.appendChild(rowElement);
+                        } else {
+                            const rowElement = document.createElement('tr');
+                            row.forEach(cell => {
+                                const cellElement = document.createElement('td');
+                                cellElement.textContent = cell;
+                                rowElement.appendChild(cellElement);
+                            });
+                            tableBody.appendChild(rowElement);
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function populateDropdown() {
+            const dropdown = document.querySelector('.dropdown-select');
+            dropdown.innerHTML = ''; // Clear existing options
+
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select Raid';
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            dropdown.appendChild(defaultOption);
+
+            sheets.forEach(sheet => {
+                const option = document.createElement('option');
+                option.value = sheet;
+                option.textContent = sheet;
+                dropdown.appendChild(option);
+            });
+
+            // Fetch data for the initial selected sheet (if any)
+            fetchSheetData(dropdown.value);
+        }
+
+        // Fetch sheet names on page load
+        fetchSheetNames();
+    </script>
+</body>
+</html>
